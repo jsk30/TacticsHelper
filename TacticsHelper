@@ -1,0 +1,75 @@
+import requests
+
+class player: 
+    summoner: str
+    player_url: str
+    player_info_url: str
+
+    def __init__(self, summoner: str, player_url: str, player_info_url: str):
+        self.summoner = summoner
+        self.player_url = player_url
+        self.player_info_url = player_info_url
+
+        
+def full_player_lookup(p: player) -> dict:
+    player_resp = requests.get(p.player_info_url)
+    player_info = player_resp.json()
+    
+    player_wins = player_info[0]['wins']
+    player_loss = player_info[0]['losses']
+    player_T4 = '{:05.2f}'.format(player_wins/(player_wins+player_loss)*100)
+    player_rank = player_info[0]['rank']
+    player_tier = player_info[0]['tier']
+    player_lp = player_info[0]['leaguePoints']
+    player_total_rank = ''
+    if (player_tier == 'MASTER' or player_tier == 'GRANDMASTER' or player_tier == 'CHALLENGER'):
+        player_total_rank = str(player_tier) + ' ' + str(player_lp) +' lp'
+    else:
+        player_total_rank = str(player_tier) + ' ' + str(player_rank) + ' ' + str(player_lp) +' lp'
+    print("Stats of " + p.summoner + ' for Teamfight Tactics')
+    print('Top 4 placements: ' + str(player_wins))
+    print('Bottom 4 placements: ' + str(player_loss))
+    print('Top 4 percentage out of total games: ' + str(player_T4) + '%')
+    print('Current Rank: ' + player_total_rank)
+    return player_info
+
+def partialPL(p: player) -> dict:
+    player_resp = requests.get(p.player_info_url)
+    player_info = player_resp.json()
+
+def mHist(puuid: str, api_match_url: str) -> list:
+    match_key = api_match_url + puuid + '/ids?start=0&count=20&' + '&api_key=' + 'your api key'
+    match_resp = requests.get(match_key)
+    match_hist = match_resp.json()
+    return match_hist
+
+def main() -> None:
+    api_key = '?api_key=' + 'your api key'
+    api_summoner_url = 'https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/'
+    api_playerinfo_url = 'https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/'
+    api_match_url = 'https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/'
+    option = int
+    while(option != 0):
+        try:
+            print ('Please choose an option from the following:' + '\n' + '0. Exit' + '\n' + '1. Player lookup' )
+            option = int(input())
+            if (option > 1 or option < 0):
+                print('Please choose an option from the menu' + '\n')
+            elif (option == 1):
+                summoner_name = input('Please enter summoner name: ')
+                summ_key = api_summoner_url + summoner_name + api_key
+                summ_resp = requests.get(summ_key)
+                summ_info = summ_resp.json()
+                player_id = summ_info['id']
+                puuid = summ_info['puuid']
+                player_key = api_playerinfo_url + player_id + api_key
+                newPlayer = player(summoner_name, summ_key, player_key)
+                player_data = full_player_lookup(newPlayer)
+                match_hist = mHist(puuid,api_match_url)
+                return
+
+        except ValueError as ve:
+            print('This is not an integer value. Please try a different option. Program will now exit')
+            return
+    return
+main()
